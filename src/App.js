@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 
@@ -13,6 +13,7 @@ import ProductDetails from "./components/ProductDetails/ProductDetails";
 import Cart from "./components/Cart/Cart";
 import Footer from "./components/Footer/Footer";
 import Profile from "./components/Profile/Profile";
+import Network from "./components/Network/Network"; // ✅ add this
 
 import "./App.css";
 
@@ -26,19 +27,60 @@ export default function App() {
 
   const [cartItems, setCartItems] = useState([]);
 
+  // ✅ Network / error state
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [netError, setNetError] = useState(""); // message if firestore fails
+  const [retryKey, setRetryKey] = useState(0); // to restart listener
+
+  // ✅ Listen to browser online/offline
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "Items"), (snap) => {
-      setItems(
-        snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }))
-      );
-      setLoading(false);
-    });
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
+  // ✅ Retry action
+  const retry = useCallback(() => {
+    setNetError("");
+    setLoading(true);
+    setRetryKey((k) => k + 1);
+  }, []);
+
+  // ✅ Firestore Items (with error handling)
+  useEffect(() => {
+    // if offline, don't start firestore listener
+    if (!isOnline) return;
+
+    setLoading(true);
+    setNetError("");
+
+    const unsub = onSnapshot(
+      collection(db, "Items"),
+      (snap) => {
+        setItems(
+          snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          }))
+        );
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Firestore error:", err);
+        setNetError("Cannot load products. Please check your connection and try again.");
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
-  }, []);
+  }, [isOnline, retryKey]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -64,7 +106,6 @@ export default function App() {
     [cartItems]
   );
 
- 
   const addToCart = (product, qty = 1) => {
     const p = {
       id: product.id,
@@ -94,11 +135,9 @@ export default function App() {
 
   const decQty = (item) =>
     setCartItems((prev) =>
-      prev
-        .map((x) =>
-          x.id === item.id ? { ...x, qty: Math.max(1, x.qty - 1) } : x
-        )
-        .filter(Boolean)
+      prev.map((x) =>
+        x.id === item.id ? { ...x, qty: Math.max(1, x.qty - 1) } : x
+      )
     );
 
   const removeItem = (item) =>
@@ -108,11 +147,24 @@ export default function App() {
     alert("Checkout page coming soon!");
   };
 
+  // ✅ If offline OR firestore error → show Network screen (after splash)
+  const showNetwork = !showSplash && (!isOnline || !!netError);
+
   return (
     <BrowserRouter>
       <div className="appShell">
         {showSplash ? (
           <SplashScreen onFinish={() => setShowSplash(false)} />
+        ) : showNetwork ? (
+          <Network
+            title={!isOnline ? "You're Offline" : "Network Error"}
+            message={
+              !isOnline
+                ? "No internet connection. Please reconnect and try again."
+                : netError
+            }
+            onRetry={retry}
+          />
         ) : (
           <>
             <Navbar
@@ -130,9 +182,9 @@ export default function App() {
                     <Hero search={search} setSearch={setSearch} />
                     <Products
                       loading={loading}
-                      products={filtered}        // (or items)
+                      products={filtered}
                       activeCategory={activeCategory}
-                      onAddToCart={addToCart}   
+                      onAddToCart={addToCart}
                     />
                   </>
                 }
@@ -157,10 +209,10 @@ export default function App() {
                   />
                 }
               />
+
               <Route path="/profile" element={<Profile />} />
               <Route path="/signin" element={<Signin />} />
             </Routes>
-            
 
             <Footer />
           </>

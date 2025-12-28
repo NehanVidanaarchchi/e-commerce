@@ -24,7 +24,7 @@ export default function Products({
           </div>
         </div>
 
-        {/* ✅ Loading animation */}
+        
         {loading ? (
           <div className="shLoadingWrap">
             <div className="shSpinner" />

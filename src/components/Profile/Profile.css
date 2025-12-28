@@ -16,7 +16,7 @@
 }
 
 .pfInner{
-  max-width: 820px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -29,7 +29,6 @@
   align-items:center;
   gap:20px;
   box-shadow: var(--shadow);
-  position: relative;
 }
 
 .pfAvatar{
@@ -41,13 +40,11 @@
   display:grid;
   place-items:center;
   font-size: 36px;
-  box-shadow: 0 16px 28px rgba(109,40,217,.28);
 }
 
 .pfHeaderInfo h2{
   margin: 0;
   font-weight: 1000;
-  letter-spacing: -0.02em;
 }
 
 .pfRole{
@@ -61,36 +58,13 @@
   color: var(--primary2);
 }
 
-.pfEditBtn{
-  margin-left:auto;
-  height: 42px;
-  padding: 0 16px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background:#fff;
-  cursor:pointer;
-  font-weight: 900;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  transition: all .15s ease;
-}
-
-.pfEditBtn:hover{
-  border-color: rgba(124,58,237,.35);
-  color: var(--primary);
-  transform: translateY(-1px);
-}
-
-/* ===== Info Card ===== */
+/* ===== Info ===== */
 .pfCard{
-  margin-top: 24px;
+  margin-top: 22px;
   background: var(--card);
   border-radius: 22px;
   padding: 26px;
   box-shadow: var(--shadow);
-  display:grid;
-  gap:22px;
 }
 
 .pfRow{
@@ -102,15 +76,12 @@
 .pfRow svg{
   font-size: 20px;
   color: var(--primary2);
-  margin-top: 4px;
 }
 
 .pfRow label{
   font-size: 12px;
   font-weight: 900;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .04em;
 }
 
 .pfRow p{
@@ -119,16 +90,115 @@
   color: var(--text);
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 640px){
-  .pfHeader{
-    flex-direction: column;
-    align-items:flex-start;
-  }
+/* ===== Orders ===== */
+.pfOrders{
+  margin-top: 28px;
+}
 
-  .pfEditBtn{
-    width:100%;
-    justify-content:center;
-    margin-left:0;
-  }
+.pfOrders h3{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight: 1000;
+}
+
+.pfEmpty,
+.pfLoading{
+  margin-top: 14px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.pfOrderList{
+  margin-top: 16px;
+  display:grid;
+  gap:18px;
+}
+
+.pfOrderCard{
+  background: var(--card);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.pfOrderTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.pfOrderId{
+  font-weight: 900;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pfStatus{
+  margin-left: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: capitalize;
+}
+
+.pfStatus.pending{
+  background:#fef3c7;
+  color:#92400e;
+}
+
+.pfTotal{
+  font-weight: 1000;
+  color: var(--primary2);
+}
+
+/* Items */
+.pfItems{
+  margin-top: 14px;
+  display:grid;
+  gap:10px;
+}
+
+.pfItem{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.pfItem img{
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.pfItemName{
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.pfItemQty{
+  font-size: 12px;
+  color: var(--muted);
+}
+.pfLogoutBtn {
+  margin-left: auto;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: #fff;
+  color: #ef4444;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pfLogoutBtn:hover {
+  background: rgba(239, 68, 68, 0.08);
+  transform: translateY(-1px);
 }

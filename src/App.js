@@ -4,6 +4,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 
 import { db } from "./firebase";
 
+import Signin from "./components/Login/Signin";
 import SplashScreen from "./components/SplashScreens/SplashScreens";
 import Navbar from "./components/Navbar/Navbar";
 import Hero from "./components/Hero/Hero";
@@ -23,10 +24,8 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // 🛒 CART STATE
   const [cartItems, setCartItems] = useState([]);
 
-  // 🔥 Firestore products
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "Items"), (snap) => {
       setItems(
@@ -41,7 +40,6 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  // 🔍 Filter products
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
 
@@ -159,8 +157,10 @@ export default function App() {
                   />
                 }
               />
-              <Route path="/login" element={<Profile />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/signin" element={<Signin />} />
             </Routes>
+            
 
             <Footer />
           </>

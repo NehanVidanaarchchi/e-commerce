@@ -18,7 +18,24 @@ export default function Navbar({
   const [items, setItems] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
 
- 
+  // ✅ Logged-in user (from localStorage)
+  const [user, setUser] = useState(null);
+
+  // 🔹 Read login state
+  useEffect(() => {
+    const raw = localStorage.getItem("sh_user");
+    setUser(raw ? JSON.parse(raw) : null);
+
+    // listen when login/logout happens in other tabs
+    const onStorage = () => {
+      const r = localStorage.getItem("sh_user");
+      setUser(r ? JSON.parse(r) : null);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  // 🔹 Load products to extract categories
   useEffect(() => {
     const unsub = onSnapshot(collection(db, COLLECTION_NAME), (snap) => {
       setItems(
@@ -28,11 +45,10 @@ export default function Navbar({
         }))
       );
     });
-
     return () => unsub();
   }, []);
 
-  
+  // 🔹 Categories
   const categories = useMemo(() => {
     const set = new Set(items.map((i) => i.category).filter(Boolean));
     return ["All Products", ...Array.from(set)];
@@ -44,7 +60,7 @@ export default function Navbar({
     if (location.pathname !== "/") nav("/");
   };
 
-
+  // close mobile menu on route change
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
@@ -52,15 +68,20 @@ export default function Navbar({
   return (
     <header className="shNav">
       <div className="shNavInner">
-        
-        <div className="shBrand" onClick={() => nav("/")} role="button" tabIndex={0}>
+        {/* BRAND */}
+        <div
+          className="shBrand"
+          onClick={() => nav("/")}
+          role="button"
+          tabIndex={0}
+        >
           <div className="shBrandText">
             <div className="shBrandTitle">ShopHub</div>
             <div className="shBrandSub">Premium Shopping</div>
           </div>
         </div>
 
-        
+        {/* DESKTOP CATEGORIES */}
         <nav className="shTabs" aria-label="Categories">
           {categories.map((c) => (
             <button
@@ -74,9 +95,9 @@ export default function Navbar({
           ))}
         </nav>
 
-        
+        {/* ACTIONS */}
         <div className="shActions">
-          {/* Cart */}
+          {/* CART */}
           <button
             className="shCartBtn"
             type="button"
@@ -89,15 +110,17 @@ export default function Navbar({
             )}
           </button>
 
+          {/* USER (LOGIN / PROFILE) */}
           <button
             className="shLoginBtn"
             type="button"
-            onClick={() => nav("/login")}
+            title={user ? "Profile" : "Login"}
+            onClick={() => nav(user ? "/profile" : "/signin")}
           >
             <FiUser />
           </button>
 
-          {/* Burger (Mobile) */}
+          {/* BURGER */}
           <button
             className="shBurger"
             type="button"
@@ -109,13 +132,15 @@ export default function Navbar({
         </div>
       </div>
 
-      
+      {/* MOBILE MENU */}
       {menuOpen && (
         <div className="shMobileMenu">
           {categories.map((c) => (
             <button
               key={c}
-              className={`shMobileItem ${activeCategory === c ? "active" : ""}`}
+              className={`shMobileItem ${
+                activeCategory === c ? "active" : ""
+              }`}
               onClick={() => pick(c)}
               type="button"
             >

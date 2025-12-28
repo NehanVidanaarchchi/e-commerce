@@ -8,8 +8,7 @@ export default function Network({
   message = "Looks like you're offline or the server is not reachable. Please check your internet connection and try again.",
   onRetry = null,
 }) {
-  
-
+    
   return (
     <div className="netWrap">
       <div className="netCard">

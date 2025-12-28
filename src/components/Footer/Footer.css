@@ -1,0 +1,96 @@
+.shFooter{
+  background: #0b1324;
+  color:#eaf0ff;
+  padding: 34px 0 0;
+  margin-top: 18px;
+}
+
+.shFooterInner{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 18px 26px;
+  display:flex;
+  justify-content:space-between;
+  gap: 22px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.shFooterBrand{
+  display:flex;
+  gap: 12px;
+  align-items:flex-start;
+  min-width: 260px;
+}
+
+.shFooterLogo{
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display:grid;
+  place-items:center;
+  background: linear-gradient(135deg, var(--primary2), var(--primary));
+  box-shadow: 0 18px 34px rgba(124,58,237,.20);
+  color:#fff;
+}
+
+.shFooterTitle{
+  font-weight: 1000;
+}
+
+.shFooterSub{
+  margin-top: 6px;
+  color: rgba(234,240,255,0.70);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.shFooterCols{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 60px;
+}
+
+.shFooterCol{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+}
+
+.shFooterH{
+  font-weight: 1000;
+  margin-bottom: 4px;
+}
+
+.shFooterCol a{
+  text-decoration:none;
+  color: rgba(234,240,255,0.70);
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.shFooterCol a:hover{
+  color:#fff;
+}
+
+.shFooterBottom{
+  text-align:center;
+  padding: 16px 18px 22px;
+  color: rgba(234,240,255,0.62);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+@media (max-width: 900px){
+  .shFooterInner{
+    flex-direction:column;
+  }
+  .shFooterCols{
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+}
+@media (max-width: 520px){
+  .shFooterCols{
+    grid-template-columns: 1fr;
+  }
+}

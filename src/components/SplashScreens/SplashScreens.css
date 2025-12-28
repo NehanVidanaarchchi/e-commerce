@@ -1,0 +1,49 @@
+/* src/components/SplashScreen/SplashScreen.css */
+
+.splash{
+  position: fixed;
+  inset: 0;
+  background: #ffffff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 9999;
+}
+
+.splashInner{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap: 14px;
+}
+
+.splashLogo{
+  width: 96px;
+  height: 96px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  display:grid;
+  place-items:center;
+  color:#fff;
+  font-weight: 1000;
+  font-size: 22px;
+  box-shadow: 0 30px 60px rgba(109,40,217,.3);
+  animation: pop .9s ease forwards;
+}
+
+.splashText{
+  font-weight: 800;
+  color:#64748b;
+  font-size: 13px;
+}
+
+@keyframes pop{
+  from{
+    transform: scale(.6);
+    opacity: 0;
+  }
+  to{
+    transform: scale(1);
+    opacity: 1;
+  }
+}

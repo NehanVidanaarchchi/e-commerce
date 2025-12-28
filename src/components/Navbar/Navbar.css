@@ -1,0 +1,216 @@
+:root{
+  --line: rgba(15, 23, 42, 0.10);
+  --primary:#6d28d9;
+  --primary2:#7c3aed;
+  --text:#0f172a;
+  --muted:#64748b;
+}
+
+/* ===== Navbar ===== */
+.shNav{
+  background:#fff;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.shNavInner{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 16px;
+}
+
+/* ===== Brand ===== */
+.shBrand{
+  cursor:pointer;
+  user-select:none;
+}
+
+.shBrandText{
+  display:flex;
+  flex-direction:column;
+  line-height:1.1;
+}
+
+.shBrandTitle{
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.shBrandSub{
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* ===== Tabs (desktop) ===== */
+.shTabs{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shTab{
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s ease;
+}
+
+.shTab:hover{
+  background: rgba(109,40,217,0.08);
+  color: var(--primary);
+}
+
+.shTab.active{
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary2), var(--primary));
+  box-shadow: 0 16px 28px rgba(109,40,217,.18);
+}
+
+/* ===== Right actions ===== */
+.shActions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+/* Cart */
+.shCartBtn{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background:#fff;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  position: relative;
+  transition: all .15s ease;
+}
+
+.shCartBtn:hover{
+  border-color: rgba(124,58,237,.35);
+  transform: translateY(-1px);
+}
+
+.shCartBtn svg{
+  font-size: 20px;
+  color: #334155;
+}
+
+.shCartBadge{
+  position:absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--primary);
+  color:#fff;
+  font-size: 11px;
+  font-weight: 900;
+  display:grid;
+  place-items:center;
+}
+
+/* Login / Profile */
+.shLoginBtn{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background:#fff;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition: all .15s ease;
+}
+
+.shLoginBtn:hover{
+  border-color: rgba(124,58,237,.35);
+  transform: translateY(-1px);
+}
+
+.shLoginBtn svg{
+  font-size: 18px;
+  color:#334155;
+}
+
+/* Burger button */
+.shBurger{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background:#fff;
+  display:none;
+  place-items:center;
+  cursor:pointer;
+  transition: all .15s ease;
+}
+
+.shBurger:hover{
+  border-color: rgba(124,58,237,.35);
+}
+
+.shBurger svg{
+  font-size: 20px;
+  color: #334155;
+}
+
+/* ===== Mobile menu ===== */
+.shMobileMenu{
+  background:#fff;
+  border-top: 1px solid var(--line);
+  padding: 10px 14px;
+  display:none;
+}
+
+.shMobileItem{
+  width: 100%;
+  text-align:left;
+  border: none;
+  background: transparent;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  color: #334155;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.shMobileItem:hover{
+  background: rgba(109,40,217,0.08);
+  color: var(--primary);
+}
+
+.shMobileItem.active{
+  color:#fff;
+  background: linear-gradient(135deg, var(--primary2), var(--primary));
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px){
+  .shTabs{ display:none; }     /* hide desktop categories */
+  .shBurger{ display:grid; }  /* show burger */
+  .shMobileMenu{ display:block; }
+}
+
+@media (max-width: 560px){
+  .shBrandSub{ display:none; }
+}

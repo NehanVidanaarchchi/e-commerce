@@ -1,0 +1,160 @@
+:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#64748b;
+  --line: rgba(15, 23, 42, 0.10);
+
+  --primary:#6d28d9;
+  --primary2:#7c3aed;
+
+  --shadow: 0 18px 40px rgba(15, 23, 42, 0.10);
+  --radius: 18px;
+}
+
+*{ box-sizing: border-box; }
+
+/* ===== Product Card ===== */
+.shCard{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  display:flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.shCard:hover{
+  transform: translateY(-2px);
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow: var(--shadow);
+}
+
+/* ===== Image ===== */
+.shImgWrap{
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.shImgWrap img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display:block;
+  transform: scale(1);
+  transition: transform .25s ease;
+}
+
+.shCard:hover .shImgWrap img{
+  transform: scale(1.04);
+}
+
+/* Featured badge */
+.shBadge{
+  position:absolute;
+  top: 12px;
+  left: 12px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(124,58,237,0.12);
+  color: var(--primary2);
+  font-weight: 1000;
+  font-size: 12px;
+  border: 1px solid rgba(124,58,237,0.18);
+  backdrop-filter: blur(6px);
+}
+
+/* ===== Content ===== */
+.shCardBody{
+  padding: 14px 14px 12px;
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shName{
+  font-weight: 1000;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  font-size: 14px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shDesc{
+  color: #64748b;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.5;
+  min-height: 34px;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ===== Bottom row ===== */
+.shBottomRow{
+  margin-top: 6px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+}
+
+.shPrice{
+  color: var(--primary2);
+  font-weight: 1000;
+  font-size: 13px;
+}
+
+.shStock{
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #16a34a;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.16);
+  display:inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+/* Cart mini button */
+.shCartMini{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #fff;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.shCartMini:hover{
+  transform: translateY(-1px);
+  border-color: rgba(124,58,237,0.28);
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.10);
+}
+
+.shCartMini svg{
+  font-size: 18px;
+  color: #334155;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 520px){
+  .shCardBody{ padding: 12px; }
+  .shCartMini{ width: 42px; height: 42px; border-radius: 12px; }
+}

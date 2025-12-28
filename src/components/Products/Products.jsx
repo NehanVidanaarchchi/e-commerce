@@ -14,8 +14,6 @@ export default function Products({
     );
   }, [products, activeCategory]);
 
-  if (loading) return <div style={{ padding: 20 }}>Loading...</div>;
-
   return (
     <section className="shSection">
       <div className="shContainer">
@@ -26,15 +24,23 @@ export default function Products({
           </div>
         </div>
 
-        <div className="shGrid">
-          {list.map((p) => (
-            <ProductCard
-              key={p.id}
-              p={{ ...p, image: p.imageUrl, desc: p.description }}
-              onAddToCart={onAddToCart}
-            />
-          ))}
-        </div>
+        {/* ✅ Loading animation */}
+        {loading ? (
+          <div className="shLoadingWrap">
+            <div className="shSpinner" />
+            <p>Loading products...</p>
+          </div>
+        ) : (
+          <div className="shGrid">
+            {list.map((p) => (
+              <ProductCard
+                key={p.id}
+                p={{ ...p, image: p.imageUrl, desc: p.description }}
+                onAddToCart={onAddToCart}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

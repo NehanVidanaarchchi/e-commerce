@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
 
 import { db } from "./firebase";
@@ -13,7 +13,7 @@ import ProductDetails from "./components/ProductDetails/ProductDetails";
 import Cart from "./components/Cart/Cart";
 import Footer from "./components/Footer/Footer";
 import Profile from "./components/Profile/Profile";
-import Network from "./components/Network/Network"; // ✅ add this
+import Network from "./components/Network/Network";
 
 import "./App.css";
 
@@ -29,8 +29,8 @@ export default function App() {
 
   // ✅ Network / error state
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [netError, setNetError] = useState(""); // message if firestore fails
-  const [retryKey, setRetryKey] = useState(0); // to restart listener
+  const [netError, setNetError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
 
   // ✅ Listen to browser online/offline
   useEffect(() => {
@@ -55,7 +55,6 @@ export default function App() {
 
   // ✅ Firestore Items (with error handling)
   useEffect(() => {
-    // if offline, don't start firestore listener
     if (!isOnline) return;
 
     setLoading(true);
@@ -74,7 +73,9 @@ export default function App() {
       },
       (err) => {
         console.error("Firestore error:", err);
-        setNetError("Cannot load products. Please check your connection and try again.");
+        setNetError(
+          "Cannot load products. Please check your connection and try again."
+        );
         setLoading(false);
       }
     );
@@ -91,10 +92,7 @@ export default function App() {
           ? true
           : p.category === activeCategory;
 
-      const text = `${p.name || ""} ${p.description || ""} ${
-        p.desc || ""
-      }`.toLowerCase();
-
+      const text = `${p.name || ""} ${p.description || ""} ${p.desc || ""}`.toLowerCase();
       const qOk = q ? text.includes(q) : true;
 
       return catOk && qOk;
@@ -151,7 +149,8 @@ export default function App() {
   const showNetwork = !showSplash && (!isOnline || !!netError);
 
   return (
-    <BrowserRouter>
+    // ✅ MemoryRouter keeps URL ALWAYS the same (only one path shown)
+    <MemoryRouter initialEntries={["/"]}>
       <div className="appShell">
         {showSplash ? (
           <SplashScreen onFinish={() => setShowSplash(false)} />
@@ -174,7 +173,7 @@ export default function App() {
             />
 
             <Routes>
-              {/* 🏠 HOME */}
+              {/* HOME */}
               <Route
                 path="/"
                 element={
@@ -190,13 +189,13 @@ export default function App() {
                 }
               />
 
-              {/* 📦 PRODUCT DETAILS */}
+              {/* PRODUCT DETAILS (won’t show in URL) */}
               <Route
                 path="/product/:id"
                 element={<ProductDetails onAddToCart={addToCart} />}
               />
 
-              {/* 🛒 CART */}
+              {/* CART (won’t show in URL) */}
               <Route
                 path="/cart"
                 element={
@@ -210,7 +209,10 @@ export default function App() {
                 }
               />
 
+              {/* PROFILE (won’t show in URL) */}
               <Route path="/profile" element={<Profile />} />
+
+              {/* SIGNIN (won’t show in URL) */}
               <Route path="/signin" element={<Signin />} />
             </Routes>
 
@@ -218,6 +220,6 @@ export default function App() {
           </>
         )}
       </div>
-    </BrowserRouter>
+    </MemoryRouter>
   );
 }

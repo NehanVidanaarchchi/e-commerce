@@ -30,25 +30,9 @@ export default function Footer() {
 
         <div className="shFooterCols">
           <div className="shFooterCol">
-            <div className="shFooterH">Shop</div>
-            <a href="/">Mobile</a>
-            <a href="/">Laptops</a>
-            <a href="/">Cookware</a>
-            <a href="/">Clothes</a>
-          </div>
-
-          <div className="shFooterCol">
             <div className="shFooterH">Company</div>
             <a href="/">About Us</a>
             <a href="/">Contact</a>
-            <a href="/">Admin Panel</a>
-          </div>
-
-          <div className="shFooterCol">
-            <div className="shFooterH">Support</div>
-            <a href="/">Help Center</a>
-            <a href="/">Shipping Info</a>
-            <a href="/">Returns</a>
           </div>
         </div>
       </div>

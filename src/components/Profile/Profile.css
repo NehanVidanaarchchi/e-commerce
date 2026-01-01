@@ -202,3 +202,46 @@
   background: rgba(239, 68, 68, 0.08);
   transform: translateY(-1px);
 }
+.pfLogoutBtn{
+  margin-left:auto;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background:#fff;
+  cursor:pointer;
+  font-weight: 900;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  transition: all .15s ease;
+}
+
+.pfLogoutBtn:hover{
+  border-color: rgba(124,58,237,.35);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.pfError{
+  margin-top: 12px;
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-weight: 900;
+  color: #991b1b;
+}
+
+/* status colors (optional) */
+.pfStatus.pending{
+  background: rgba(234, 179, 8, 0.14);
+  border: 1px solid rgba(234, 179, 8, 0.22);
+  color: #92400e;
+}
+
+.pfStatus.done{
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  color: #166534;
+}

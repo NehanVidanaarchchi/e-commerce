@@ -1,8 +1,15 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import {
+  MemoryRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { collection, onSnapshot } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
 
 import Signin from "./components/Login/Signin";
 import SplashScreen from "./components/SplashScreens/SplashScreens";
@@ -17,20 +24,122 @@ import Network from "./components/Network/Network";
 
 import "./App.css";
 
+const SESSION_KEY = "sh_session_expires_at"; // must match Signin.jsx
+const SESSION_MINUTES = 30;
+
+/* ✅ Protected Route */
+function ProtectedRoute({ authReady, isAuthed, children }) {
+  const location = useLocation();
+  if (!authReady) return null;
+
+  if (!isAuthed) {
+    return <Navigate to="/signin" replace state={{ redirectTo: location.pathname }} />;
+  }
+
+  return children;
+}
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
+  // ✅ Auth state
+  const [authReady, setAuthReady] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(false);
+
+  // ✅ Products state
   const [items, setItems] = useState([]);
   const [activeCategory, setActiveCategory] = useState("All Products");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // ✅ Cart state
   const [cartItems, setCartItems] = useState([]);
 
   // ✅ Network / error state
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [netError, setNetError] = useState("");
   const [retryKey, setRetryKey] = useState(0);
+
+  // ✅ session timer ref
+  const sessionTimerRef = useRef(null);
+
+  // ---------------------------
+  // ✅ Session helpers (memoized)
+  // ---------------------------
+  const getExpiresAt = useCallback(
+    () => Number(localStorage.getItem(SESSION_KEY) || 0),
+    []
+  );
+
+  const isSessionValid = useCallback(() => {
+    const expiresAt = getExpiresAt();
+    return !!expiresAt && Date.now() < expiresAt;
+  }, [getExpiresAt]);
+
+  const set30MinSessionIfMissing = useCallback(() => {
+    const expiresAt = getExpiresAt();
+    if (!expiresAt) {
+      localStorage.setItem(
+        SESSION_KEY,
+        String(Date.now() + SESSION_MINUTES * 60 * 1000)
+      );
+    }
+  }, [getExpiresAt]);
+
+  const clearSession = useCallback(() => {
+    localStorage.removeItem(SESSION_KEY);
+  }, []);
+
+  const forceLogout = useCallback(async () => {
+    try {
+      await signOut(auth);
+    } catch {}
+    clearSession();
+  }, [clearSession]);
+
+  // ✅ GLOBAL: Listen Firebase Auth + enforce 30-min expiry
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      // clear previous timer
+      if (sessionTimerRef.current) {
+        clearTimeout(sessionTimerRef.current);
+        sessionTimerRef.current = null;
+      }
+
+      if (!u) {
+        setIsAuthed(false);
+        setAuthReady(true);
+        return;
+      }
+
+      // if user exists but session expired -> log out
+      if (!isSessionValid()) {
+        await forceLogout();
+        setIsAuthed(false);
+        setAuthReady(true);
+        return;
+      }
+
+      // session exists/valid -> keep login
+      set30MinSessionIfMissing();
+      setIsAuthed(true);
+      setAuthReady(true);
+
+      // ✅ auto logout exactly at expiry time
+      const expiresAt = getExpiresAt();
+      const msLeft = Math.max(0, expiresAt - Date.now());
+
+      sessionTimerRef.current = setTimeout(async () => {
+        await forceLogout();
+        setIsAuthed(false);
+      }, msLeft);
+    });
+
+    return () => {
+      if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
+      unsub();
+    };
+  }, [forceLogout, getExpiresAt, isSessionValid, set30MinSessionIfMissing]);
 
   // ✅ Listen to browser online/offline
   useEffect(() => {
@@ -73,9 +182,7 @@ export default function App() {
       },
       (err) => {
         console.error("Firestore error:", err);
-        setNetError(
-          "Cannot load products. Please check your connection and try again."
-        );
+        setNetError("Cannot load products. Please check your connection and try again.");
         setLoading(false);
       }
     );
@@ -83,14 +190,13 @@ export default function App() {
     return () => unsub();
   }, [isOnline, retryKey]);
 
+  // ✅ Filter products
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
 
     return items.filter((p) => {
       const catOk =
-        activeCategory === "All Products"
-          ? true
-          : p.category === activeCategory;
+        activeCategory === "All Products" ? true : p.category === activeCategory;
 
       const text = `${p.name || ""} ${p.description || ""} ${p.desc || ""}`.toLowerCase();
       const qOk = q ? text.includes(q) : true;
@@ -99,11 +205,13 @@ export default function App() {
     });
   }, [items, activeCategory, search]);
 
+  // ✅ Cart count
   const cartCount = useMemo(
     () => cartItems.reduce((sum, i) => sum + Number(i.qty || 0), 0),
     [cartItems]
   );
 
+  // ✅ Cart actions
   const addToCart = (product, qty = 1) => {
     const p = {
       id: product.id,
@@ -118,9 +226,7 @@ export default function App() {
     setCartItems((prev) => {
       const found = prev.find((x) => x.id === p.id);
       if (found) {
-        return prev.map((x) =>
-          x.id === p.id ? { ...x, qty: x.qty + qty } : x
-        );
+        return prev.map((x) => (x.id === p.id ? { ...x, qty: x.qty + qty } : x));
       }
       return [...prev, { ...p, qty }];
     });
@@ -133,23 +239,16 @@ export default function App() {
 
   const decQty = (item) =>
     setCartItems((prev) =>
-      prev.map((x) =>
-        x.id === item.id ? { ...x, qty: Math.max(1, x.qty - 1) } : x
-      )
+      prev.map((x) => (x.id === item.id ? { ...x, qty: Math.max(1, x.qty - 1) } : x))
     );
 
   const removeItem = (item) =>
     setCartItems((prev) => prev.filter((x) => x.id !== item.id));
 
-  const checkout = () => {
-    alert("Checkout page coming soon!");
-  };
-
   // ✅ If offline OR firestore error → show Network screen (after splash)
   const showNetwork = !showSplash && (!isOnline || !!netError);
 
   return (
-    // ✅ MemoryRouter keeps URL ALWAYS the same (only one path shown)
     <MemoryRouter initialEntries={["/"]}>
       <div className="appShell">
         {showSplash ? (
@@ -189,13 +288,13 @@ export default function App() {
                 }
               />
 
-              {/* PRODUCT DETAILS (won’t show in URL) */}
+              {/* PRODUCT DETAILS */}
               <Route
                 path="/product/:id"
                 element={<ProductDetails onAddToCart={addToCart} />}
               />
 
-              {/* CART (won’t show in URL) */}
+              {/* ✅ CART is PUBLIC (login check happens inside Cart on checkout button) */}
               <Route
                 path="/cart"
                 element={
@@ -204,16 +303,26 @@ export default function App() {
                     onInc={incQty}
                     onDec={decQty}
                     onRemove={removeItem}
-                    onCheckout={checkout}
+                    onCheckoutDone={() => setCartItems([])}
                   />
                 }
               />
 
-              {/* PROFILE (won’t show in URL) */}
-              <Route path="/profile" element={<Profile />} />
+              {/* ✅ PROFILE is PROTECTED */}
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute authReady={authReady} isAuthed={isAuthed}>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
 
-              {/* SIGNIN (won’t show in URL) */}
+              {/* SIGNIN */}
               <Route path="/signin" element={<Signin />} />
+
+              {/* fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
 
             <Footer />

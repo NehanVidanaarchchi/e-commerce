@@ -1,13 +1,19 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
+  setPersistence,
+  browserLocalPersistence,
+  signOut,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import "./Signin.css";
+
+const SESSION_KEY = "sh_session_expires_at";
+const SESSION_MINUTES = 30;
 
 export default function Signin() {
   const nav = useNavigate();
@@ -32,12 +38,51 @@ export default function Signin() {
       .replace(/-/g, " ")
       .trim();
 
+  const set30MinSession = () => {
+    const expiresAt = Date.now() + SESSION_MINUTES * 60 * 1000;
+    localStorage.setItem(SESSION_KEY, String(expiresAt));
+  };
+
+  const isSessionValid = () => {
+    const raw = localStorage.getItem(SESSION_KEY);
+    const expiresAt = Number(raw || 0);
+    return expiresAt && Date.now() < expiresAt;
+  };
+
+  // ✅ On page load: if user is already logged in, keep them (until 30 min)
+  useEffect(() => {
+    // Ensure persistence is local (survives refresh)
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+    const unsub = auth.onAuthStateChanged(async (u) => {
+      if (!u) return;
+
+      // If session expired -> sign out
+      if (!isSessionValid()) {
+        try {
+          await signOut(auth);
+        } catch {}
+        localStorage.removeItem(SESSION_KEY);
+        return;
+      }
+
+      // Session still valid -> go to redirect
+      nav(redirectTo, { replace: true });
+    });
+
+    return () => unsub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
+      // ✅ Ensure persistence is local (keeps login after refresh)
+      await setPersistence(auth, browserLocalPersistence);
+
       if (mode === "register") {
         // ✅ validations
         if (!name.trim()) throw new Error("Name required");
@@ -48,10 +93,10 @@ export default function Signin() {
         // ✅ create auth account
         const res = await createUserWithEmailAndPassword(auth, email, password);
 
-        // ✅ optional: set auth displayName
+        // ✅ set auth displayName
         await updateProfile(res.user, { displayName: name.trim() });
 
-        // ✅ save in firestore users collection
+        // ✅ save user in firestore users collection
         await setDoc(doc(db, "users", res.user.uid), {
           uid: res.user.uid,
           name: name.trim(),
@@ -60,14 +105,18 @@ export default function Signin() {
           createdAt: serverTimestamp(),
         });
 
+        // ✅ start 30 min session
+        set30MinSession();
+
         nav(redirectTo, { replace: true });
       } else {
         // ✅ LOGIN
         const res = await signInWithEmailAndPassword(auth, email, password);
 
-        // ✅ ensure user doc exists (optional safety)
+        // ✅ ensure user doc exists
         const uref = doc(db, "users", res.user.uid);
         const snap = await getDoc(uref);
+
         if (!snap.exists()) {
           await setDoc(
             uref,
@@ -81,6 +130,9 @@ export default function Signin() {
             { merge: true }
           );
         }
+
+        // ✅ start 30 min session
+        set30MinSession();
 
         nav(redirectTo, { replace: true });
       }
@@ -98,7 +150,6 @@ export default function Signin() {
 
         {error && <div className="authError">{error}</div>}
 
-        {/* ✅ NAME + PHONE ONLY FOR REGISTER */}
         {mode === "register" && (
           <>
             <input

@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiArrowLeft,
   FiTrash2,
@@ -9,13 +9,7 @@ import {
   FiX,
   FiClipboard,
 } from "react-icons/fi";
-import {
-  addDoc,
-  collection,
-  serverTimestamp,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../../firebase";
 import "./Cart.css";
 
@@ -24,14 +18,14 @@ export default function Cart({
   onInc = () => {},
   onDec = () => {},
   onRemove = () => {},
-  onCheckoutDone = () => {}, // ✅ clear cart
+  onCheckoutDone = () => {},
 }) {
   const nav = useNavigate();
+  const location = useLocation();
 
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
-  // ✅ POPUP STATE
   const [showPopup, setShowPopup] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
 
@@ -46,7 +40,6 @@ export default function Cart({
 
   const total = subtotal;
 
-  // ✅ Create receipt id
   const makeReceiptId = () => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -56,25 +49,104 @@ export default function Cart({
     return `RCP-${yyyy}${mm}${dd}-${rand}`;
   };
 
-  // ✅ Auto-checkout after login
-  useEffect(() => {
-    const flag = localStorage.getItem("sh_do_checkout");
-    const user = auth.currentUser;
+  const downloadReceipt = (data, items) => {
+    try {
+      const now = new Date();
+      const dateStr = now.toLocaleString();
 
-    if (flag === "1" && user && cartItems.length > 0 && !saving) {
-      localStorage.removeItem("sh_do_checkout");
-      handleCheckout();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartItems]);
+      const rows = (items || [])
+        .map(
+          (i) => `
+          <tr>
+            <td style="padding:10px;border-bottom:1px solid #eee;">${i.name}</td>
+            <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">${i.qty}</td>
+            <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">Rs ${Number(i.price || 0).toFixed(2)}</td>
+            <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">Rs ${(Number(i.price || 0) * Number(i.qty || 0)).toFixed(2)}</td>
+          </tr>
+        `
+        )
+        .join("");
+
+      const html = `
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Receipt ${data.receiptId}</title>
+</head>
+<body style="font-family:Arial, sans-serif;background:#f6f7fb;margin:0;padding:24px;">
+  <div style="max-width:720px;margin:0 auto;background:#fff;border:1px solid rgba(15,23,42,.12);border-radius:16px;overflow:hidden;">
+    <div style="padding:18px 20px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;">
+      <h2 style="margin:0;">ShopHub Receipt</h2>
+      <div style="opacity:.9;margin-top:6px;">${dateStr}</div>
+    </div>
+
+    <div style="padding:18px 20px;">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;">
+        <div>
+          <div style="font-size:12px;color:#64748b;font-weight:700;">Receipt ID</div>
+          <div style="font-size:16px;font-weight:900;color:#0f172a;">${data.receiptId}</div>
+        </div>
+        
+      </div>
+
+      <div style="margin-top:16px;display:grid;gap:10px;">
+        <div style="padding:12px;border:1px solid rgba(15,23,42,.10);border-radius:12px;">
+          <div style="font-size:12px;color:#64748b;font-weight:800;">Customer</div>
+          <div style="font-weight:900;color:#0f172a;margin-top:4px;">${data.customerName || "—"}</div>
+          <div style="color:#334155;margin-top:6px;"><b>Phone:</b> ${data.customerPhone || "—"}</div>
+          <div style="color:#334155;margin-top:4px;"><b>Email:</b> ${data.userEmail || "—"}</div>
+        </div>
+      </div>
+
+      <h3 style="margin:18px 0 10px;color:#0f172a;">Items</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:10px;border-bottom:1px solid #eee;color:#64748b;">Product</th>
+            <th style="text-align:center;padding:10px;border-bottom:1px solid #eee;color:#64748b;">Qty</th>
+            <th style="text-align:right;padding:10px;border-bottom:1px solid #eee;color:#64748b;">Price</th>
+            <th style="text-align:right;padding:10px;border-bottom:1px solid #eee;color:#64748b;">Total</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+
+      <div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px;display:grid;gap:6px;">
+        <div style="display:flex;justify-content:space-between;color:#334155;font-weight:800;">
+          <span>Items</span><span>${data.itemsCount}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;color:#0f172a;font-weight:1000;font-size:16px;margin-top:6px;">
+          <span>Total</span><span style="color:#6d28d9;">Rs ${Number(data.total || 0).toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.receiptId}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+    } catch {}
+  };
 
   const handleCheckout = async () => {
     setMsg("");
 
     const user = auth.currentUser;
+
+    // ✅ ONLY HERE we check login
     if (!user) {
-      localStorage.setItem("sh_do_checkout", "1");
-      nav("/signin", { state: { redirectTo: "/cart" } });
+      nav("/signin", { state: { redirectTo: location.pathname } });
       return;
     }
 
@@ -83,36 +155,35 @@ export default function Cart({
     try {
       setSaving(true);
 
-      // ✅ Get logged user's name + phone from Firestore
       let customerName = "";
       let customerPhone = "";
 
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const u = userSnap.data();
-        customerName = u.name || "";
-        customerPhone = u.phone || "";
-      }
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const u = userSnap.data();
+          customerName = u.name || "";
+          customerPhone = u.phone || "";
+        }
+      } catch {}
 
       const receiptId = makeReceiptId();
+
+      const orderItems = cartItems.map((i) => ({
+        id: i.id,
+        name: i.name,
+        price: Number(i.price || 0),
+        qty: Number(i.qty || 1),
+        image: i.image || i.imageUrl || "",
+      }));
 
       const order = {
         receiptId,
         userId: user.uid,
         userEmail: user.email || "",
-        customer: {
-          name: customerName,
-          phone: customerPhone,
-        },
-        items: cartItems.map((i) => ({
-          id: i.id,
-          name: i.name,
-          price: Number(i.price || 0),
-          qty: Number(i.qty || 1),
-          image: i.image || i.imageUrl || "",
-        })),
+        customer: { name: customerName, phone: customerPhone },
+        items: orderItems,
         itemsCount,
         subtotal,
         total,
@@ -122,20 +193,22 @@ export default function Cart({
 
       await addDoc(collection(db, "orders"), order);
 
-      // ✅ clear cart
       onCheckoutDone();
 
-      // ✅ OPEN POPUP
-      setReceiptData({
+      const payload = {
         receiptId,
         customerName,
         customerPhone,
+        userEmail: user.email || "",
         total,
+        subtotal,
         itemsCount,
-      });
+      };
+
+      setReceiptData(payload);
       setShowPopup(true);
 
-      setMsg("");
+      downloadReceipt(payload, orderItems);
     } catch (e) {
       console.error(e);
       setMsg("❌ Failed to place order. Try again.");
@@ -150,7 +223,7 @@ export default function Cart({
       await navigator.clipboard.writeText(receiptData.receiptId);
       setMsg("✅ Receipt copied!");
       setTimeout(() => setMsg(""), 1500);
-    } catch (e) {
+    } catch {
       setMsg("❌ Copy failed");
       setTimeout(() => setMsg(""), 1500);
     }
@@ -160,7 +233,6 @@ export default function Cart({
     <>
       <section className="cartPage">
         <div className="cartWrap">
-          {/* Top bar */}
           <div className="cartTop">
             <button className="cartBack" type="button" onClick={() => nav("/")}>
               <FiArrowLeft />
@@ -176,7 +248,6 @@ export default function Cart({
           {msg && <div className="cartMsg">{msg}</div>}
 
           <div className="cartGrid">
-            {/* Left: items */}
             <div className="cartLeft">
               {cartItems.length === 0 ? (
                 <div className="cartEmpty">
@@ -209,40 +280,21 @@ export default function Cart({
                       </div>
 
                       <div className="cartItemQty">
-                        <button
-                          className="qtyBtn"
-                          type="button"
-                          onClick={() => onDec(item)}
-                          aria-label="Decrease quantity"
-                        >
+                        <button className="qtyBtn" type="button" onClick={() => onDec(item)}>
                           <FiMinus />
                         </button>
                         <div className="qtyVal">{item.qty || 1}</div>
-                        <button
-                          className="qtyBtn"
-                          type="button"
-                          onClick={() => onInc(item)}
-                          aria-label="Increase quantity"
-                        >
+                        <button className="qtyBtn" type="button" onClick={() => onInc(item)}>
                           <FiPlus />
                         </button>
                       </div>
 
                       <div className="cartItemRight">
                         <div className="cartItemTotal">
-                          Rs :{" "}
-                          {(
-                            Number(item.price || 0) * Number(item.qty || 0)
-                          ).toFixed(2)}
+                          Rs : {(Number(item.price || 0) * Number(item.qty || 0)).toFixed(2)}
                         </div>
 
-                        <button
-                          className="removeBtn"
-                          type="button"
-                          onClick={() => onRemove(item)}
-                          title="Remove"
-                          aria-label="Remove item"
-                        >
+                        <button className="removeBtn" type="button" onClick={() => onRemove(item)}>
                           <FiTrash2 />
                         </button>
                       </div>
@@ -252,7 +304,6 @@ export default function Cart({
               )}
             </div>
 
-            {/* Right: summary */}
             <aside className="cartRight">
               <div className="summaryCard">
                 <h3>Order Summary</h3>
@@ -260,16 +311,6 @@ export default function Cart({
                 <div className="sumRow">
                   <span>Subtotal ({itemsCount} items)</span>
                   <span>Rs : {subtotal.toFixed(2)}</span>
-                </div>
-
-                <div className="sumRow">
-                  <span>Shipping</span>
-                  <span className="sumFree">Free</span>
-                </div>
-
-                <div className="sumRow">
-                  <span>Tax</span>
-                  <span className="sumMuted">Calculated at checkout</span>
                 </div>
 
                 <div className="sumDivider" />
@@ -287,36 +328,16 @@ export default function Cart({
                 >
                   {saving ? "Placing Order..." : "Proceed to Checkout"}
                 </button>
-
-                <div className="sumNote">
-                  🚚 <span>Free shipping on all orders</span>
-                </div>
               </div>
             </aside>
           </div>
         </div>
       </section>
 
-      {/* ✅ POPUP MODAL */}
       {showPopup && receiptData && (
-        <div
-          className="rcOverlay"
-          onClick={() => setShowPopup(false)}
-          role="presentation"
-        >
-          <div
-            className="rcModal"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            <button
-              className="rcClose"
-              type="button"
-              onClick={() => setShowPopup(false)}
-              aria-label="Close"
-              title="Close"
-            >
+        <div className="rcOverlay" onClick={() => setShowPopup(false)} role="presentation">
+          <div className="rcModal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <button className="rcClose" type="button" onClick={() => setShowPopup(false)}>
               <FiX />
             </button>
 
@@ -326,7 +347,7 @@ export default function Cart({
               </div>
               <div>
                 <h3>Order Placed Successfully</h3>
-                <p>Your order is now pending. We’ll process it soon.</p>
+                <p>Receipt downloaded automatically. Your order is pending.</p>
               </div>
             </div>
 
@@ -341,21 +362,6 @@ export default function Cart({
                 </div>
               </div>
 
-              <div className="rcRow">
-                <span>Customer</span>
-                <b>{receiptData.customerName || "—"}</b>
-              </div>
-
-              <div className="rcRow">
-                <span>Phone</span>
-                <b>{receiptData.customerPhone || "—"}</b>
-              </div>
-
-              <div className="rcRow">
-                <span>Items</span>
-                <b>{receiptData.itemsCount}</b>
-              </div>
-
               <div className="rcRow rcTotal">
                 <span>Total</span>
                 <b>Rs : {Number(receiptData.total || 0).toFixed(2)}</b>
@@ -366,7 +372,6 @@ export default function Cart({
               <button className="rcBtn ghost" onClick={() => nav("/")}>
                 Continue Shopping
               </button>
-
               <button className="rcBtn" onClick={() => nav("/profile")}>
                 View My Orders
               </button>

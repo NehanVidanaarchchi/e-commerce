@@ -39,18 +39,56 @@
 .pdLeft{
   background:#0b0f17;
   padding: 22px;
-  min-height: 520px;
   display:flex;
-  align-items:center;
-  justify-content:center;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 520px;
 }
 
 .pdImg{
   width:100%;
-  height:100%;
-  max-height:620px;
+  height: 420px;
   object-fit: cover;
   border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.08);
+  background:#111827;
+}
+
+/* ✅ thumbnails */
+.pdThumbs{
+  width:100%;
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap: wrap;
+}
+
+.pdThumbBtn{
+  width: 78px;
+  height: 78px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  cursor:pointer;
+  padding: 6px;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.pdThumbBtn:hover{
+  transform: translateY(-1px);
+}
+
+.pdThumbBtn.active{
+  border-color: rgba(124,58,237,.95);
+  box-shadow: 0 0 0 3px rgba(124,58,237,.18);
+}
+
+.pdThumb{
+  width:100%;
+  height:100%;
+  object-fit: cover;
+  border-radius: 12px;
+  background:#111827;
 }
 
 .pdRight{
@@ -118,6 +156,20 @@
   text-align:center;
 }
 
+.pdStockOk{
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #16a34a;
+}
+
+.pdStockNo{
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #ef4444;
+}
+
 .pdAdd{
   margin-top:22px;
   width:100%;
@@ -133,6 +185,12 @@
   cursor:pointer;
   background: linear-gradient(135deg,#4f46e5,#7c3aed,#a855f7);
   box-shadow: 0 18px 34px rgba(109,40,217,.22);
+  transition: transform .12s ease, filter .12s ease;
+}
+
+.pdAdd:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.02);
 }
 
 .pdAdd:disabled{
@@ -184,6 +242,7 @@
   font-weight: 900;
 }
 
+/* Skeleton */
 .sk{
   position: relative;
   overflow: hidden;
@@ -196,12 +255,7 @@
   position:absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255,255,255,.55),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
   animation: shimmer 1.1s infinite;
 }
 
@@ -211,7 +265,7 @@
 
 .skImg{
   width: 100%;
-  height: 520px;
+  height: 420px;
   border-radius: 16px;
 }
 
@@ -223,16 +277,10 @@
 .skQty{ width: 240px; height: 44px; border-radius: 14px; }
 .skBtn{ width: 100%; height: 56px; border-radius: 14px; }
 
-.skIcon{ width: 44px; height: 44px; border-radius: 14px; margin: 0 auto 10px; }
-.skFTitle{ width: 120px; height: 12px; margin: 0 auto; }
-.skFSub{ width: 100px; height: 10px; margin: 8px auto 0; }
-
 /* Responsive */
 @media (max-width: 980px){
-  .pdCard{
-    grid-template-columns: 1fr;
-  }
-  .pdLeft{ min-height: 320px; }
-  .skImg{ height: 320px; }
+  .pdCard{ grid-template-columns: 1fr; }
+  .pdLeft{ min-height: auto; }
+  .pdImg{ height: 320px; }
   .pdFeatures{ grid-template-columns: 1fr; }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiArrowLeft, FiMinus, FiPlus, FiShoppingCart } from "react-icons/fi";
@@ -17,6 +17,9 @@ export default function ProductDetails({ onAddToCart = () => {} }) {
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
 
+  // ✅ active image for gallery
+  const [activeImg, setActiveImg] = useState(FALLBACK_IMG);
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -25,11 +28,16 @@ export default function ProductDetails({ onAddToCart = () => {} }) {
         const snap = await getDoc(ref);
 
         if (snap.exists()) {
-          setItem({ id: snap.id, ...snap.data() });
+          const data = { id: snap.id, ...snap.data() };
+          setItem(data);
+
+          // 🔎 helpful debug (check console)
+          console.log("PRODUCT DATA:", data);
         } else {
           setItem(null);
         }
       } catch (e) {
+        console.log(e);
         setItem(null);
       } finally {
         setLoading(false);
@@ -38,12 +46,39 @@ export default function ProductDetails({ onAddToCart = () => {} }) {
     load();
   }, [id]);
 
-  
+  // ✅ collect images from multiple possible field names
+  const images = useMemo(() => {
+    if (!item) return [];
+
+    const fromArray = Array.isArray(item.images) ? item.images : [];
+
+    const arr = [
+      item.imageUrl,
+      item.imageUrl2,
+      item.image2,
+      item.secondImage,
+      ...fromArray,
+    ]
+      .filter(Boolean)
+      .map((x) => String(x).trim())
+      .filter(Boolean);
+
+    // remove duplicates
+    return Array.from(new Set(arr));
+  }, [item]);
+
+  // ✅ set default active image
+  useEffect(() => {
+    if (!item) return;
+    setActiveImg(images[0] || item.imageUrl || FALLBACK_IMG);
+  }, [item, images]);
+
+  // ✅ loading UI
   if (loading) {
     return (
       <div className="pdWrap">
         <div className="pdInner">
-          <button className="pdBack" onClick={() => nav(-1)}>
+          <button className="pdBack" onClick={() => nav(-1)} type="button">
             <FiArrowLeft /> Back to Shop
           </button>
 
@@ -58,29 +93,8 @@ export default function ProductDetails({ onAddToCart = () => {} }) {
               <div className="sk skLine" />
               <div className="sk skLine sm" />
               <div className="sk skPrice" />
-
               <div className="sk skQty" />
               <div className="sk skBtn" />
-
-              <div className="pdDivider" />
-
-              <div className="pdFeatures">
-                <div className="pdFeature">
-                  <div className="sk skIcon" />
-                  <div className="sk skFTitle" />
-                  <div className="sk skFSub" />
-                </div>
-                <div className="pdFeature">
-                  <div className="sk skIcon" />
-                  <div className="sk skFTitle" />
-                  <div className="sk skFSub" />
-                </div>
-                <div className="pdFeature">
-                  <div className="sk skIcon" />
-                  <div className="sk skFTitle" />
-                  <div className="sk skFSub" />
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -88,12 +102,12 @@ export default function ProductDetails({ onAddToCart = () => {} }) {
     );
   }
 
-  
+  // ✅ not found
   if (!item) {
     return (
       <div className="pdWrap">
         <div className="pdInner">
-          <button className="pdBack" onClick={() => nav(-1)}>
+          <button className="pdBack" onClick={() => nav(-1)} type="button">
             <FiArrowLeft /> Back to Shop
           </button>
           <div className="pdNotFound">Product not found.</div>
@@ -104,24 +118,47 @@ export default function ProductDetails({ onAddToCart = () => {} }) {
 
   const stock = Number(item.stock || 0);
 
+  // ✅ always show 2 thumbnails even if only 1 image exists
+  const thumb1 = images[0] || item.imageUrl || FALLBACK_IMG;
+  const thumb2 = images[1] || item.imageUrl2 || FALLBACK_IMG;
+
   return (
     <div className="pdWrap">
       <div className="pdInner">
-        <button className="pdBack" onClick={() => nav(-1)}>
+        <button className="pdBack" onClick={() => nav(-1)} type="button">
           <FiArrowLeft /> Back to Shop
         </button>
 
         <div className="pdCard">
+          {/* LEFT: images */}
           <div className="pdLeft">
             <img
-              src={item.imageUrl || FALLBACK_IMG}
-              alt={item.name}
+              src={activeImg || FALLBACK_IMG}
+              alt={item.name || "product"}
               className="pdImg"
               onError={(e) => (e.currentTarget.src = FALLBACK_IMG)}
             />
+
+            <div className="pdThumbs">
+              {[thumb1, thumb2].map((src, idx) => (
+                <button
+                  type="button"
+                  key={idx}
+                  className={`pdThumbBtn ${src === activeImg ? "active" : ""}`}
+                  onClick={() => setActiveImg(src)}
+                >
+                  <img
+                    src={src}
+                    alt={`thumb-${idx + 1}`}
+                    className="pdThumb"
+                    onError={(e) => (e.currentTarget.src = FALLBACK_IMG)}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
 
-          
+          {/* RIGHT: content */}
           <div className="pdRight">
             <span className="pdCat">{item.category || "Category"}</span>
 
@@ -129,11 +166,8 @@ export default function ProductDetails({ onAddToCart = () => {} }) {
 
             <p className="pdDesc">{item.description}</p>
 
-            <div className="pdPrice">
-              Rs : {Number(item.price || 0).toFixed(2)}
-            </div>
+            <div className="pdPrice">Rs : {Number(item.price || 0).toFixed(2)}</div>
 
-            
             <div className="pdQty">
               <div className="pdQtyLabel">Quantity</div>
 
@@ -156,23 +190,28 @@ export default function ProductDetails({ onAddToCart = () => {} }) {
                   <FiPlus />
                 </button>
               </div>
+
+              {stock > 0 ? (
+                <div className="pdStockOk">In stock: {stock}</div>
+              ) : (
+                <div className="pdStockNo">Out of stock</div>
+              )}
             </div>
 
-            
             <button
               className="pdAdd"
               type="button"
+              disabled={stock === 0}
               onClick={(e) => {
-              e.stopPropagation();      
-              onAddToCart(item, qty);        
-            }}
+                e.stopPropagation();
+                onAddToCart(item, qty);
+              }}
             >
               <FiShoppingCart /> Add to Cart
             </button>
 
             <div className="pdDivider" />
 
-            
             <div className="pdFeatures">
               <div className="pdFeature">
                 <div className="pdIconCircle">📦</div>
